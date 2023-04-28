@@ -1,8 +1,9 @@
-import sympy
 from sympy import *
+import sympy
 from sympy.logic.boolalg import *
 from sympy.abc import *
-from sympy.parsing.sympy_parser import parse_expr
+import itertools
+import copy
 
 # Initialize the belief base as an empty list
 belief_base = []
@@ -61,8 +62,19 @@ class BeliefBase:
                     variables.append(bvar)
         return {v: Symbol(v) for v in variables}
 
+    def equals(self, new_bb):
+        for (b, p) in self.belief_base:
+            if not new_bb.contains_formula(b):
+                return False
+        return True
+
+    def get_total_priority(self):
+        total = 0
+        for (_, p) in self.belief_base:
+            total += p
+        return total
+
 def convert_bb_to_cnf(bb):
-    # TODO - remove demorgan ands
     new_belief_base = BeliefBase([])
     symbols = bb.get_symbols()
 
@@ -74,72 +86,138 @@ def convert_bb_to_cnf(bb):
         # Parse the expression string into a Sympy expression
         new_belief_base.add_formula(sympy.to_cnf(belief), priority)
 
-    return new_belief_base
+    bb_no_and = remove_and(new_belief_base)
+
+    return bb_no_and
+
+def remove_and(bb):
+    new_bb = BeliefBase([])
+    for (b, p) in bb.belief_base:
+        if b.func == And:
+            new_bb.add_formula(b.args[0], p)
+            new_bb.add_formula(b.args[1], p)
+        else:
+            new_bb.add_formula(b, p)
+    return new_bb
 
 def logical_entailment(bb, belief):
     # First, KB ∧ ¬φ is converted into CNF
     bb.add_formula(belief, 5)
     kb_cnf = convert_bb_to_cnf(bb)
 
-
-    # Then, the resolution rule is applied to the resulting clauses
-
-
+    tmp_bb = None
+    res_bb = None
     searching = true
     while searching:
-        searching = false
-        print(f"Number of pairs: {find_pairs(kb_cnf)}")
+        tmp_bb = resolve(kb_cnf)
+
+        if len(tmp_bb.belief_base) == 0:
+            return true
+
+        if res_bb is not None and tmp_bb.equals(res_bb):
+            searching = false
+            if len(res_bb.belief_base) > 0:
+                return false
+            else:
+                return true
+        else:
+            res_bb = copy.deepcopy(tmp_bb)
 
     return false
+
 
 
 def isNot(b2, symbol):
     if b2.func == Not and len(b2.args) == 1 and symbol in b2.args:
         return true
-    elif len(b2.args) != 0:
-        for arg in b2.args:
-            if arg.func == Not and symbol in arg.binary_symbols:
-                return true
     else:
-        return b2.func == Not and symbol in b2.binary_symbols
+        for arg in b2.args:
+            if arg.func == Not and len(arg.args) == 1 and symbol in arg.binary_symbols:
+                return true
+        return false
+
+def isTrue(b1, symbol):
+    if b1.func != Not and len(b1.args) == 0 and symbol == b1:
+        return true
+    elif b1.func == Not and len(b1.args) == 1 and symbol in b1.binary_symbols:
+        return false
+    else:
+        for arg in b1.args:
+            if len(arg.args) == 0 and symbol in arg.binary_symbols and arg.func != Not:
+                return true
+        return false
 
 def solve_literals(b1, b2, symbol):
     combined = Or(b1, b2)
-    solved = Symbol("")
+    solved = None
     for arg in combined.args:
-        if arg != symbol and arg != Not(symbol):
-            if len(solved.args) > 0:
+        if symbol not in arg.binary_symbols:
+            if solved != None:
                 solved = Or(solved, arg)
             else:
                 solved = arg
 
     return solved
 
-def find_pairs(bb):
+def resolve(bb):
     symbols = bb.get_symbols()
 
     count = 0
     for v, s in symbols.items():
         for (b1, p1) in bb.belief_base:
-            if s in b1.binary_symbols:
+            if isTrue(b1,s):
                 for (b2, p2) in bb.belief_base:
                     if b1 != b2:
                         if s in b2.binary_symbols and isNot(b2, s):
-                            res = solve_literals(b1, b2, s)
-                            count += 1
-    return count
+                            bb.remove_formula(b1)
+                            bb.remove_formula(b2)
+                            solved = solve_literals(b1, b2, s)
+                            if solved is not None:
+                                bb.add_formula(solve_literals(b1, b2, s), 666)
+                                return bb
+                            else:
+                                return BeliefBase([])
+    return bb
+
+
+def get_combinations(bb):
+    res = []
+    for n in range(1, len(bb.belief_base)+1):
+        res += itertools.combinations(bb.belief_base, n)
+    return res
+
+
+def from_comb_to_to_bb(combs):
+    bb = BeliefBase([])
+    for (b, p) in combs:
+        bb.add_formula(b, p)
+    return bb
+
+
+def contraction(bb, b):
+    bb_combinations = get_combinations(bb)
+
+    constellations = []
+    for combination in bb_combinations:
+        bb = from_comb_to_to_bb(combination)
+
+        entails = logical_entailment(copy.deepcopy(bb), b)
+        if entails:
+            constellations.append((bb, bb.get_total_priority()))
+
+    return constellations
 
 
 def test():
     belief_base = BeliefBase([])
 
     # Add beliefs to the belief base
-    belief_base.add_formula("A", 1)  # Priority 1
-    belief_base.add_formula("B | ~A", 2)  # Priority 2
-    belief_base.add_formula("C", 3)  # Priority 3
-    belief_base.add_formula("D", 4)  # Priority 4
+    belief_base.add_formula("~r | p | s ", 1)  # Priority 1
+    belief_base.add_formula("~p | r", 2)  # Priority 2
+    belief_base.add_formula("~s | r", 3)  # Priority 3
+    belief_base.add_formula("~r", 4)  # Priority 3
 
-    print(logical_entailment(belief_base, "~C"))
+    print(contraction(belief_base, "~p"))
 
 if __name__ == "__main__":
     test()
