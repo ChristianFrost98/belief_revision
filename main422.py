@@ -74,17 +74,20 @@ class BeliefBase:
             total += p
         return total
 
+def convert_b_to_cnf(belief, symbols):
+    # Replace variables in the expression string with corresponding symbols
+    for v, s in symbols.items():
+        belief = belief.replace(v, str(s))
+
+    # Parse the expression string into a Sympy expression
+    return sympy.to_cnf(belief)
+
 def convert_bb_to_cnf(bb):
     new_belief_base = BeliefBase([])
     symbols = bb.get_symbols()
 
     for (belief, priority) in bb.belief_base:
-        # Replace variables in the expression string with corresponding symbols
-        for v, s in symbols.items():
-            belief = belief.replace(v, str(s))
-
-        # Parse the expression string into a Sympy expression
-        new_belief_base.add_formula(sympy.to_cnf(belief), priority)
+        new_belief_base.add_formula(convert_b_to_cnf(belief, symbols), priority)
 
     bb_no_and = remove_and(new_belief_base)
 
@@ -102,10 +105,9 @@ def remove_and(bb):
 
 def logical_entailment(bb, belief):
     # First, KB ∧ ¬φ is converted into CNF
-    bb.add_formula(belief, 5)
+    bb.add_formula("~"+belief, 5)
     kb_cnf = convert_bb_to_cnf(bb)
 
-    tmp_bb = None
     res_bb = None
     searching = true
     while searching:
@@ -147,16 +149,26 @@ def isTrue(b1, symbol):
                 return true
         return false
 
-def solve_literals(b1, b2, symbol):
+def solve_literals(b1, b2):
     combined = Or(b1, b2)
+    combined_symbols = combined.binary_symbols
     solved = None
-    for arg in combined.args:
-        if symbol not in arg.binary_symbols:
-            if solved != None:
-                solved = Or(solved, arg)
-            else:
-                solved = arg
 
+    for s in combined_symbols:
+        have_compli_lit = False
+        for arg in combined.args:
+            if isTrue(arg, s):
+                for arg2 in combined.args:
+                    if s in arg2.binary_symbols and isNot(arg2, s):
+                        have_compli_lit = True
+
+        if not have_compli_lit:
+            for arg in combined.args:
+                if isTrue(arg, s) or isNot(arg, s):
+                    if solved == None:
+                        solved = arg
+                    else:
+                        solved = Or(solved, arg)
     return solved
 
 def resolve(bb):
@@ -171,9 +183,9 @@ def resolve(bb):
                         if s in b2.binary_symbols and isNot(b2, s):
                             bb.remove_formula(b1)
                             bb.remove_formula(b2)
-                            solved = solve_literals(b1, b2, s)
+                            solved = solve_literals(b1, b2)
                             if solved is not None:
-                                bb.add_formula(solve_literals(b1, b2, s), 666)
+                                bb.add_formula(solve_literals(b1, b2), 666)
                                 return bb
                             else:
                                 return BeliefBase([])
@@ -205,7 +217,14 @@ def contraction(bb, b):
         if entails:
             constellations.append((bb, bb.get_total_priority()))
 
+    if constellations:
+        max_priority = max(constellations, key=lambda x: x[1])
+        return max_priority
+    else:
+        print("The list of constellations is empty.")
+
     return constellations
+
 
 
 def test():
@@ -213,11 +232,25 @@ def test():
 
     # Add beliefs to the belief base
     belief_base.add_formula("~r | p | s ", 1)  # Priority 1
-    belief_base.add_formula("~p | r", 2)  # Priority 2
+    belief_base.add_formula("~p | r | r", 2)  # Priority 2
     belief_base.add_formula("~s | r", 3)  # Priority 3
     belief_base.add_formula("~r", 4)  # Priority 3
 
-    print(contraction(belief_base, "~p"))
+    new_clause = "~p"
+    b, p = contraction(belief_base,new_clause)
+    print("Belief base entails new belief")
+    print(b)
+    print("Max priority achievable:")
+    print(p)
+    # Extend
+    b.add_formula(new_clause,5)
+    print("Belief base after revision")
+    print(b)
+
+    # Solve literal test
+    #belief_base.add_formula("~p",5)
+   # bb_cnf = convert_bb_to_cnf(belief_base)
+    #solve_literals(bb_cnf.belief_base[0][0], bb_cnf.belief_base[1][0])
 
 if __name__ == "__main__":
     test()
