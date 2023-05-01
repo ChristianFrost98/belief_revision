@@ -57,11 +57,11 @@ def agm_consistency_postulate_alter():
     # Test 1.4 - Adding consistent belief results in adding belief
     belief_base = create_test_bb()
 
-    new_clause = "~a"
+    new_clause = "~d"
     new_clause_priority = 1
     bb, p = revision(belief_base, new_clause, new_clause_priority)
 
-    if ("a", 4) not in bb.belief_base:
+    if ("d", 4) not in bb.belief_base:
         print("Consistency: Passed test")
     else:
         print("Consistency: Failed test")
@@ -71,7 +71,7 @@ def agm_consistency_postulate_dont_alter():
     # Test 1.5 - Adding false belief results in not adding belief
     belief_base = create_test_bb()
 
-    new_clause = "a"
+    new_clause = "d"
     new_clause_priority = 1
     bb, p = revision(belief_base, new_clause, new_clause_priority)
 
@@ -90,7 +90,7 @@ def agm_extensionality_postulate():
     # Test 1.6 - Adding belief that is already in belief base results in not changing belief base
     belief_base = create_test_bb()
 
-    new_clause = "a"
+    new_clause = "d"
     new_clause_priority = 1
     bb, p = revision(belief_base, new_clause, new_clause_priority)
 

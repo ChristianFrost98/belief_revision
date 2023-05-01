@@ -5,7 +5,7 @@ def create_test_bb():
 
     # New knowledge is most important
     belief_base.add_formula("~a | b | c ", 1)
-    belief_base.add_formula("~b | a ", 2)
+    belief_base.add_formula("~b | a | e ", 2)
     belief_base.add_formula("~c | a", 3)
     belief_base.add_formula("d", 4)
 
