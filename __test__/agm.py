@@ -1,20 +1,15 @@
 from revision import *
+from test_utils import *
 
 
 def agm_success_postulate():
     # Create belief base
-    belief_base = BeliefBase([])
+    belief_base = create_test_bb()
 
-    # Add beliefs to the belief base
-    belief_base.add_formula("~r | p | s ", 1)  # Priority 1
-    belief_base.add_formula("~p | r | r", 2)  # Priority 2
-    belief_base.add_formula("~s | r", 3)  # Priority 3
-    belief_base.add_formula("~r", 4)  # Priority 3
-
-    # Test 1.0 - Adding true belief results in adding belief
     new_clause = "~p"
     new_clause_priority = 1
     bb, p = revision(belief_base, new_clause, new_clause_priority)
+
     is_added = False
     for (b, p) in bb.belief_base:
         if b == new_clause:
@@ -28,13 +23,7 @@ def agm_success_postulate():
 
 def agm_inclusion_postulate():
     # Test 1.1 - Adding false belief results in not adding belief
-    belief_base = BeliefBase([])
-
-    # Add beliefs to the belief base
-    belief_base.add_formula("~r | p | s ", 1)  # Priority 1
-    belief_base.add_formula("~p | r | r", 2)  # Priority 2
-    belief_base.add_formula("~s | r", 3)  # Priority 3
-    belief_base.add_formula("a", 4)  # Priority 3
+    belief_base = create_test_bb()
 
     new_clause = "z"
     new_clause_priority = 1
@@ -50,19 +39,12 @@ def agm_inclusion_postulate():
 
 def agm_vacuity_postulate():
     # Test 1.1 - Adding false belief results in not adding belief
-    belief_base = BeliefBase([])
-
-    # Add beliefs to the belief base
-    belief_base.add_formula("~r | p | s ", 1)  # Priority 1
-    belief_base.add_formula("~p | r | r", 2)  # Priority 2
-    belief_base.add_formula("~s | r", 3)  # Priority 3
-    belief_base.add_formula("a", 4)  # Priority 3
+    belief_base = create_test_bb()
 
     new_clause = "z"
     new_clause_priority = 1
     bb, p = revision(belief_base, new_clause, new_clause_priority)
 
-    # Add new clause to B + phi
     belief_base.add_formula(new_clause, new_clause_priority)
     if belief_base.equals(bb):
         print("Vacuity: Passed test")
@@ -72,13 +54,7 @@ def agm_vacuity_postulate():
 
 def agm_consistency_postulate_alter():
     # Test 1.1 - Adding false belief results in not adding belief
-    belief_base = BeliefBase([])
-
-    # Add beliefs to the belief base
-    belief_base.add_formula("~r | p | s ", 1)  # Priority 1
-    belief_base.add_formula("~p | r | r", 2)  # Priority 2
-    belief_base.add_formula("~s | r", 3)  # Priority 3
-    belief_base.add_formula("a", 4)  # Priority 4
+    belief_base = create_test_bb()
 
     new_clause = "~a"
     new_clause_priority = 1
@@ -92,13 +68,7 @@ def agm_consistency_postulate_alter():
 
 def agm_consistency_postulate_dont_alter():
     # Test 1.1 - Adding false belief results in not adding belief
-    belief_base = BeliefBase([])
-
-    # Add beliefs to the belief base
-    belief_base.add_formula("~r | p | s ", 1)  # Priority 1
-    belief_base.add_formula("~p | r | r", 2)  # Priority 2
-    belief_base.add_formula("~s | r", 3)  # Priority 3
-    belief_base.add_formula("a", 4)  # Priority 4
+    belief_base = create_test_bb()
 
     new_clause = "a"
     new_clause_priority = 1
@@ -117,13 +87,7 @@ def agm_consistency_postulate_dont_alter():
 
 def agm_extensionality_postulate():
     # Test 1.1 - Adding false belief results in not adding belief
-    belief_base = BeliefBase([])
-
-    # Add beliefs to the belief base
-    belief_base.add_formula("~r | p | s ", 1)  # Priority 1
-    belief_base.add_formula("~p | r | r", 2)  # Priority 2
-    belief_base.add_formula("~s | r", 3)  # Priority 3
-    belief_base.add_formula("a", 4)  # Priority 4
+    belief_base = create_test_bb()
 
     new_clause = "a"
     new_clause_priority = 1
