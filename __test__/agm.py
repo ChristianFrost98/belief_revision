@@ -3,6 +3,7 @@ from test_utils import *
 
 
 def agm_success_postulate():
+    #Test 1.1 - Checks when we add a formula that it is added to the belief base
     # Create belief base
     belief_base = create_test_bb()
 
@@ -22,7 +23,7 @@ def agm_success_postulate():
 
 
 def agm_inclusion_postulate():
-    # Test 1.1 - Adding false belief results in not adding belief
+    # Test 1.2 - Checks if new belief base is added will result in a belief base that is a superset of the old belief base
     belief_base = create_test_bb()
 
     new_clause = "z"
@@ -38,7 +39,7 @@ def agm_inclusion_postulate():
 
 
 def agm_vacuity_postulate():
-    # Test 1.1 - Adding false belief results in not adding belief
+    # Test 1.3 - checks  if we negate the belief we want to add, and it is not present, we add the belief.
     belief_base = create_test_bb()
 
     new_clause = "z"
@@ -53,7 +54,7 @@ def agm_vacuity_postulate():
 
 
 def agm_consistency_postulate_alter():
-    # Test 1.1 - Adding false belief results in not adding belief
+    # Test 1.4 - Adding consistent belief results in adding belief
     belief_base = create_test_bb()
 
     new_clause = "~a"
@@ -67,7 +68,7 @@ def agm_consistency_postulate_alter():
 
 
 def agm_consistency_postulate_dont_alter():
-    # Test 1.1 - Adding false belief results in not adding belief
+    # Test 1.5 - Adding false belief results in not adding belief
     belief_base = create_test_bb()
 
     new_clause = "a"
@@ -86,7 +87,7 @@ def agm_consistency_postulate_dont_alter():
 
 
 def agm_extensionality_postulate():
-    # Test 1.1 - Adding false belief results in not adding belief
+    # Test 1.6 - Adding belief that is already in belief base results in not changing belief base
     belief_base = create_test_bb()
 
     new_clause = "a"
